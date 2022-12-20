@@ -16,13 +16,24 @@ class CreateMessagesTable extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('sender_id');
-            $table->unsignedBigInteger('receiver_id');
-            $table->foreign('sender_id')->references('id')->on('users');
-            $table->foreign('receiver_id')->references('id')->on('users');
-            $table->text('body')->nullable();
+            //
+            $table->bigInteger('user_id')->unsigned();
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->bigInteger('conversations_id')->unsigned();
+            $table->foreign('conversations_id')->references('id')->on('conversations');
+            $table->text('message')->nullable();;
+            $table->string('emoji')->nullable();
+            $table->boolean('star')->default(0);
             $table->boolean('read')->default(0);
-            $table->string('type')->nullable();
+            //
+
+//            $table->unsignedBigInteger('sender_id');
+//            $table->unsignedBigInteger('receiver_id');
+//            $table->foreign('sender_id')->references('id')->on('users');
+//            $table->foreign('receiver_id')->references('id')->on('users');
+//            $table->text('body')->nullable();
+//            $table->boolean('read')->default(0);
+//            $table->string('type')->nullable();
             $table->timestamps();
         });
     }

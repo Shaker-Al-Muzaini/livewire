@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\CreateChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,4 +17,24 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::group([
+
+    'middleware' => 'api',
+    'prefix' => 'auth'
+
+], function ($router) {
+
+
+
+    Route::prefix('user')->group(function () {
+
+        Route::post('creat_conversation',[CreateChatController::class, 'creatConversation']);
+        Route::post('get_conversations',[CreateChatController::class, 'getConversations']);
+
+
+
+    });
+
 });

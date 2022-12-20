@@ -63,6 +63,23 @@ return [
             ]) : [],
         ],
 
+        'mysql_2' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST_2', '127.0.0.1'),
+            'port' => env('DB_PORT_2', '3306'),
+            'database' => env('DB_DATABASE_2', 'forge'),
+            'username' => env('DB_USERNAME_2', 'forge'),
+            'password' => env('DB_PASSWORD_2', ''),
+            'unix_socket' => env('DB_SOCKET_2', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+        ],
+
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),

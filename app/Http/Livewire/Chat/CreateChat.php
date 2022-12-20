@@ -17,18 +17,17 @@ class CreateChat extends Component
     public function checkconversation($receiverId)
     {
 
-        // dd($receiverId);
 
-        $checkedConversation = Conversation::where('receiver_id', auth()->user()->id)->where('sender_id', $receiverId)->orWhere('receiver_id', $receiverId)->where('sender_id', auth()->user()->id)->get();
+        $checkedConversation = Conversation::where('receiver_id', auth()->user()->id)
+            ->where('sender_id', $receiverId)->orWhere('receiver_id', $receiverId)
+            ->where('sender_id', auth()->user()->id)->get();
 
 
         if (count($checkedConversation) == 0) {
 
-     // dd(no conversation);
 
-            $createdConversation= Conversation::create(['receiver_id'=>$receiverId,'sender_id'=>auth()->user()->id,'last_time_message'=>0]);
-          /// conversation created 
-
+            $createdConversation= Conversation::create(['receiver_id'=>$receiverId,'sender_id' => auth()->user()->id,]);
+          /// conversation created
             $createdMessage= Message::create(['conversation_id'=>$createdConversation->id,'sender_id'=>auth()->user()->id,'receiver_id'=>$receiverId,'body'=>$this->message]);
 
 
@@ -49,12 +48,13 @@ class CreateChat extends Component
         }
         # code...
     }
+
     public function render()
     {
 
 
-        $this->users = User::where('id', '!=', auth()->user()->id)->get();
-
+        $this->users = User::where('id','!=',auth()->user()->id)->where('company_NO',auth()->user()->company_NO)->orderBy('full_name','asc')->get();
         return view('livewire.chat.create-chat');
     }
+
 }

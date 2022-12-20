@@ -8,7 +8,7 @@
         </div>
 
         <div class="img_container">
-            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->name}}" alt="">
+            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt="">
         </div>
     </div>
 
@@ -36,7 +36,7 @@
                             <div class="message_body text-truncate">
                                 {{ $conversation->messages->last()->body }}
                             </div>
-                 
+
                             @php
                                 if(count($conversation->messages->where('read',0)->where('receiver_id',Auth()->user()->id))){
 

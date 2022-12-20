@@ -9,13 +9,13 @@
             </div>
 
             <div class="img_container">
-                <img src="https://ui-avatars.com/api/?name={{ $receiverInstance->name }}" alt="">
+                <img src="https://ui-avatars.com/api/?name={{ $receiverInstance->full_name }}" alt="">
 
             </div>
 
 
             <div class="name">
-                {{ $receiverInstance->name }}
+                {{ $receiverInstance->full_name }}
             </div>
 
 
@@ -48,10 +48,10 @@
 
                         <div class="read">
                             @php
-                                
+
                           if($message->user->id === auth()->id()){
 
-                
+
                                     if($message->read == 0){
 
 
@@ -65,7 +65,7 @@
 
 
                             @endphp
-                      
+
 
                         </div>
                     </div>
@@ -133,7 +133,7 @@ window.livewire.emit('resetComponent');
 
     });
 </script>
- 
+
 
 <script>
 
@@ -141,7 +141,7 @@ window.addEventListener('markMessageAsRead',event=>{
  var value= document.querySelectorAll('.status_tick');
 
  value.array.forEach(element, index => {
-     
+
 
     element.classList.remove('bi bi-check2');
     element.classList.add('bi bi-check2-all','text-primary');
