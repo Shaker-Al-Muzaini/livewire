@@ -54,6 +54,7 @@ class Conversation extends Model
     }
 
 
+
     public function messages(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Message::class, 'conversations_id' , 'id');
@@ -61,7 +62,7 @@ class Conversation extends Model
 
     public function usersConversation()
     {
-        return $this->hasMany(Participant::class, 'task_id', 'id');
+        return $this->hasMany(Participant::class , 'conversations_id' , 'id');
     }
 
 }

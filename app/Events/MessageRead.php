@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 class MessageRead implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
- 
+
     public $conversation_id;
     public $receiver_id;
 
@@ -30,7 +30,6 @@ class MessageRead implements ShouldBroadcast
     {
 
          return [
-
             'conversation_id'=>$this->conversation_id,
             'receiver_id'=> $this->receiver_id,
          ];

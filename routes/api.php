@@ -33,7 +33,8 @@ Route::group([
         Route::post('creat_conversation',[CreateChatController::class, 'creatConversation']);
         Route::post('get_conversations',[CreateChatController::class, 'getConversations']);
 
-
+        Route::post('/send_message', [CreateChatController::class, 'sendMessage']);
+        Route::post('/read_message', [CreateChatController::class, 'readMessage']);
 
     });
 
