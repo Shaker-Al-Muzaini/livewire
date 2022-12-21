@@ -17,7 +17,6 @@ class SendMessage extends Component
     public $createdMessage;
     protected $listeners = ['updateSendMessage', 'dispatchMessageSent', 'resetComponent'];
 
-
     public function resetComponent()
     {
 
@@ -27,8 +26,6 @@ class SendMessage extends Component
         # code...
     }
 
-
-
     function updateSendMessage(Conversation $conversation, User $receiver)
     {
 
@@ -37,9 +34,6 @@ class SendMessage extends Component
         $this->receiverInstance = $receiver;
         # code...
     }
-
-
-
 
     public function sendMessage()
     {

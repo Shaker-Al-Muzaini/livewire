@@ -17,6 +17,8 @@ class Message extends Model
         'emoji',
         'read',
         'star',
+        'pin',
+        'parent_id'
     ];
 
 
@@ -40,6 +42,16 @@ class Message extends Model
     public function MessageUser(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Message::class, 'parent_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(Message::class, 'parent_id');
     }
 
 }

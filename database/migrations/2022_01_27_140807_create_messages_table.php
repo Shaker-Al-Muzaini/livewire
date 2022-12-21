@@ -25,6 +25,12 @@ class CreateMessagesTable extends Migration
             $table->string('emoji')->nullable();
             $table->boolean('star')->default(0);
             $table->boolean('read')->default(0);
+            $table->boolean('pin')->default(0);
+            $table->unsignedBigInteger('parent_id')->nullable();
+                $table->foreign('parent_id')
+                ->references('id')
+                ->on('messages')
+                ->onDelete('cascade');
             //
 
 //            $table->unsignedBigInteger('sender_id');

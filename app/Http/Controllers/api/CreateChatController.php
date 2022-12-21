@@ -101,7 +101,9 @@ class CreateChatController extends Controller
                         $query->select('id', 'full_name', 'image');
                     },
                     'messages' => function ($query) {
-                        $query->orderBy('created_at', 'desc');
+                        $query->orderBy('created_at', 'desc')->with(['parent' => function($query) {
+                            $query->orderBy('created_at', 'desc');
+                        }]);
                     }
                 ]
 
@@ -115,6 +117,49 @@ class CreateChatController extends Controller
             return response()->json([
                 'status' => 'success',
                 'conversations' => $conversations,
+            ], 200);
+
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function getOneConversation(Request $request)
+    {
+
+        try {
+
+            $conversation = Conversation::with(
+
+                [
+                    'SenderConversation' => function ($query) {
+                        $query->select('id', 'full_name', 'image');
+                    },
+                    'ReceiverConversation' => function ($query) {
+                        $query->select('id', 'full_name', 'image');
+                    },
+                    'messages' => function ($query) {
+                        $query->orderBy('created_at', 'desc')->with(['parent' => function($query) {
+                            $query->orderBy('created_at', 'desc');
+                        }]);
+                    }
+                ]
+
+            )->orderBy('last_time_message','desc')
+                ->where('id',$request->conversation_id)->first();
+
+//            $conversations = Conversation::with('usersConversation')->where('sender_id', $auth_id)
+//                ->orWhere('receiver_id', $auth_id)->get();
+
+            return response()->json([
+                'status' => 'success',
+                'conversation' => $conversation,
             ], 200);
 
 
@@ -203,5 +248,198 @@ class CreateChatController extends Controller
             ], 500);
         }
     }
+
+    public function pinOnMessage(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            Message::where('id', $request->message_id)->update([
+                'pin' => true
+            ]);
+
+            $messageIs = Message::where('id',$request->message_id)->first();
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => $messageIs,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function pinOffMessage(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            Message::where('id', $request->message_id)->update([
+                'pin' => false
+            ]);
+
+            $messageIs = Message::where('id',$request->message_id)->first();
+
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => $messageIs,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function starOnMessage(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            Message::where('id', $request->message_id)->update([
+                'star' => true
+            ]);
+
+            $messageIs = Message::where('id',$request->message_id)->first();
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => $messageIs,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function starOffMessage(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            Message::where('id', $request->message_id)->update([
+                'star' => false
+            ]);
+
+            $messageIs = Message::where('id',$request->message_id)->first();
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => $messageIs,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function starGetConversation(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+
+            $message = Message::with([
+                'MessageConversation' => function ($query) {
+                    $query->select('id');
+                },
+                'MessageUser' => function ($query) {
+                    $query->select('id', 'full_name', 'image','created_at');
+                },
+            ])->where('id', $request->message_id)->first();
+
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function createReplay(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+            $message = Message::create([
+                'user_id' => $request->user_id,
+                'message' => $request->message,
+                'conversations_id' => $request->conversations_id,
+                'parent_id' => $request->parent_id
+            ]);
+
+            $conversation = Conversation::where('id', $request->conversations_id)->update([
+                'last_time_message' => $message->created_at
+            ]);
+
+
+            $pusher->trigger('livewire-chat', 'MessageSent', [
+                'parent_id' => $request->parent_id,
+                'user_id' => $request->user_id,
+                'message_id' => $message->id,
+                'message_body' => $request->message,
+                'conversations_id' => $request->conversations_id,
+            ]);
+
+            DB::commit();
+            return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
 
 }

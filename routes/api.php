@@ -30,11 +30,29 @@ Route::group([
 
     Route::prefix('user')->group(function () {
 
+
         Route::post('creat_conversation',[CreateChatController::class, 'creatConversation']);
+        Route::post('get_one_conversation',[CreateChatController::class, 'getOneConversation']);
         Route::post('get_conversations',[CreateChatController::class, 'getConversations']);
 
-        Route::post('/send_message', [CreateChatController::class, 'sendMessage']);
-        Route::post('/read_message', [CreateChatController::class, 'readMessage']);
+        Route::post('pin_message',[CreateChatController::class, 'getConversations']);
+
+        //read
+        Route::post('send_message', [CreateChatController::class, 'sendMessage']);
+        Route::post('read_message', [CreateChatController::class, 'readMessage']);
+
+        //pin
+        Route::post('pin_on_message',[CreateChatController::class, 'pinOnMessage']);
+        Route::post('pin_off_message',[CreateChatController::class, 'pinOffMessage']);
+
+        //star
+        Route::post('star_on_message',[CreateChatController::class, 'starOnMessage']);
+        Route::post('star_off_message',[CreateChatController::class, 'starOffMessage']);
+        Route::post('star_get_conversation',[CreateChatController::class, 'starGetConversation']);
+
+        //replay
+        Route::post('messages_replies', [CreateChatController::class, 'createReplay']);
+
 
     });
 
