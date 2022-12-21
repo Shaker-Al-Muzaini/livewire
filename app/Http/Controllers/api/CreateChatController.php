@@ -1,5 +1,5 @@
-<?php          
-     
+<?php
+
 namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
@@ -101,7 +101,9 @@ class CreateChatController extends Controller
                         $query->select('id', 'full_name', 'image');
                     },
                     'messages' => function ($query) {
-                        $query->orderBy('created_at', 'desc')->with(['parent' => function($query) {
+                        $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
+                            $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                        }])->with(['parent' => function($query) {
                             $query->orderBy('created_at', 'desc');
                         }]);
                     }
@@ -145,7 +147,9 @@ class CreateChatController extends Controller
                         $query->select('id', 'full_name', 'image');
                     },
                     'messages' => function ($query) {
-                        $query->orderBy('created_at', 'desc')->with(['parent' => function($query) {
+                        $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
+                            $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                        }])->with(['parent' => function($query) {
                             $query->orderBy('created_at', 'desc');
                         }]);
                     }
