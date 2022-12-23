@@ -35,10 +35,16 @@ Route::group([
         Route::post('get_one_conversation',[CreateChatController::class, 'getOneConversation']);
         Route::post('get_conversations',[CreateChatController::class, 'getConversations']);
 
-        Route::post('pin_message',[CreateChatController::class, 'getConversations']);
+        //sent
+        Route::post('send_message', [CreateChatController::class, 'sendMessage']);
+
+        //send an image
+        Route::post('/image_messages', [CreateChatController::class, 'submitImage']);
+
+        //send a file
+        Route::post('/file_messages', [CreateChatController::class, 'submitFile']);
 
         //read
-        Route::post('send_message', [CreateChatController::class, 'sendMessage']);
         Route::post('read_message', [CreateChatController::class, 'readMessage']);
 
         //pin

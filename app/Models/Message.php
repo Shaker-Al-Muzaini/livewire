@@ -18,6 +18,8 @@ class Message extends Model
         'read',
         'star',
         'pin',
+        'is_image',
+        'is_file',
         'parent_id'
     ];
 

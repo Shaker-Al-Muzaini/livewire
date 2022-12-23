@@ -26,6 +26,8 @@ class CreateMessagesTable extends Migration
             $table->boolean('star')->default(0);
             $table->boolean('read')->default(0);
             $table->boolean('pin')->default(0);
+            $table->boolean('is_image')->default(0);
+            $table->boolean('is_file')->default(0);
             $table->unsignedBigInteger('parent_id')->nullable();
                 $table->foreign('parent_id')
                 ->references('id')
