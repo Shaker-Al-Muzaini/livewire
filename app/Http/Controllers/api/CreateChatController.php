@@ -362,7 +362,7 @@ class CreateChatController extends Controller
                 'last_time_message' => $message->created_at
             ]);
 
-            // Trigger a new-image-message event to Pusher
+            // Trigger a new-file-message event to Pusher
             $pusher = new Pusher(
                 '6b9ab9b8a817a7857923',
                 '2189a62314214f15c216',
@@ -391,21 +391,36 @@ class CreateChatController extends Controller
 
     }
 
-    public function pinOnMessage(Request $request){
+    public function updateStatus(Request $request){
 
         DB::beginTransaction();
         try {
 
-            Message::where('id', $request->message_id)->update([
-                'pin' => true
+            $this->validate($request, [
+                'user_id' => 'required',
+                'status' => 'required|in:online,offline',
             ]);
 
-            $messageIs = Message::where('id',$request->message_id)->first();
+            $user = User::findOrFail($request->user_id);
+            $user->status = $request->status;
+            $user->save();
+
+            // Trigger a user-status-changed event to Pusher
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+            $pusher->trigger('livewire-chat', 'user-status-changed', [
+                'user_id' => $user->id,
+                'status' => $user->status,
+            ]);
 
             DB::commit();
             return response()->json([
                 'status' => 'success',
-                'message' => $messageIs,
             ]);
 
         } catch (\Exception $e) {
@@ -419,22 +434,34 @@ class CreateChatController extends Controller
         }
     }
 
-    public function pinOffMessage(Request $request){
+
+    public function pinMessage(Request $request){
 
         DB::beginTransaction();
         try {
 
-            Message::where('id', $request->message_id)->update([
-                'pin' => false
+            $message = Message::find($request->message_id);
+
+            // Toggle the message's "pinned" field
+            $message->pin = !$message->pin;
+            $message->save();
+
+            // Trigger a message-pinned event to Pusher
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+            $pusher->trigger('livewire-chat', 'message-pinned', [
+                'message' => $message->id,
             ]);
-
-            $messageIs = Message::where('id',$request->message_id)->first();
-
 
             DB::commit();
             return response()->json([
                 'status' => 'success',
-                'message' => $messageIs,
+                'message' => $message,
             ]);
 
         } catch (\Exception $e) {
@@ -448,49 +475,35 @@ class CreateChatController extends Controller
         }
     }
 
-    public function starOnMessage(Request $request){
+
+    public function starMessage(Request $request){
 
         DB::beginTransaction();
         try {
 
-            Message::where('id', $request->message_id)->update([
-                'star' => true
-            ]);
+            $message = Message::find($request->message_id);
 
-            $messageIs = Message::where('id',$request->message_id)->first();
+            // Toggle the message's "starred" field
+            $message->star = !$message->star;
+            $message->save();
+
+
+            // Trigger a new-image-message event to Pusher
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+            $pusher->trigger('livewire-chat', 'message-starred', [
+                'message' => $message->id,
+            ]);
 
             DB::commit();
             return response()->json([
                 'status' => 'success',
-                'message' => $messageIs,
-            ]);
-
-        } catch (\Exception $e) {
-            // Return Json Response
-            DB::rollBack();
-            return response()->json([
-                'message' => "Something went really wrong!",
-                'error' => $e->getMessage()
-
-            ], 500);
-        }
-    }
-
-    public function starOffMessage(Request $request){
-
-        DB::beginTransaction();
-        try {
-
-            Message::where('id', $request->message_id)->update([
-                'star' => false
-            ]);
-
-            $messageIs = Message::where('id',$request->message_id)->first();
-
-            DB::commit();
-            return response()->json([
-                'status' => 'success',
-                'message' => $messageIs,
+                'message' => $message,
             ]);
 
         } catch (\Exception $e) {
@@ -536,6 +549,8 @@ class CreateChatController extends Controller
             ], 500);
         }
     }
+
+
 
     public function createReplay(Request $request){
 

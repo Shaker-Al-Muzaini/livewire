@@ -44,17 +44,19 @@ Route::group([
         //send a file
         Route::post('/file_messages', [CreateChatController::class, 'submitFile']);
 
+        //user status
+        Route::post('/user_status',  [CreateChatController::class, 'updateStatus']);
+
         //read
         Route::post('read_message', [CreateChatController::class, 'readMessage']);
 
         //pin
-        Route::post('pin_on_message',[CreateChatController::class, 'pinOnMessage']);
-        Route::post('pin_off_message',[CreateChatController::class, 'pinOffMessage']);
+        Route::post('pin_message',[CreateChatController::class, 'pinMessage']);
 
         //star
-        Route::post('star_on_message',[CreateChatController::class, 'starOnMessage']);
-        Route::post('star_off_message',[CreateChatController::class, 'starOffMessage']);
+        Route::post('star_message',[CreateChatController::class, 'starMessage']);
         Route::post('star_get_conversation',[CreateChatController::class, 'starGetConversation']);
+//        Route::post('star_get_all',[CreateChatController::class, 'starGetAll']);
 
         //replay
         Route::post('messages_replies', [CreateChatController::class, 'createReplay']);
