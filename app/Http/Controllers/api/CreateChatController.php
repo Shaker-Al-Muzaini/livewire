@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Participant;
 use App\Models\Poll;
+use App\Models\PollVote;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -260,15 +261,14 @@ class CreateChatController extends Controller
             $conversation = Conversation::where('id', $request->conversations_id)->update([
                 'last_time_message' => $message->created_at
             ]);
+            DB::commit();
 
-            $new = Message::with([ 'messages' => function ($query) {
-                $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
-                    $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
-                }])->with(['parent' => function($query) {
+            $new = Message::with(['parent' => function($query) {
                     $query->orderBy('created_at', 'desc');
                 }])->with(['polls' => function($query) {
                     $query->orderBy('created_at', 'desc');
-                }]);
+                }])->with(['MessageUser' => function ($query) {
+                $query->select('id', 'full_name', 'image');
             }])->find($message->id);
 
             $pusher->trigger('livewire-chat', 'message-sent', [
@@ -278,8 +278,7 @@ class CreateChatController extends Controller
                 'conversations_id' => $request->conversations_id,
                 ]);
 
-            DB::commit();
-            return response()->json(['status' => 'success']);
+            return response()->json(['status' => $new]);
 
 
         } catch (\Exception $e) {
@@ -761,7 +760,7 @@ class CreateChatController extends Controller
                 ]);
             }
 
-            $pusher->trigger('livewire-chat', 'message-replay', [
+            $pusher->trigger('livewire-chat', 'message-poll', [
                 'user_id' => $request->user_id,
                 'poll_options' => $request->poll_options,
                 'message' => $message,
