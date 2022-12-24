@@ -86,6 +86,50 @@ class CreateChatController extends Controller
         }
     }
 
+    public function creatGroupConversation(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            $user = User::find($request->user_id);
+
+            $group = Conversation::create([
+               'name' => $request->group_name,
+               'type' => 'group',
+               'admin_id' => $user->id,
+                'company_NO' => $user->company_NO
+            ]);
+
+            Participant::create([
+                'conversations_id' => $group->id,
+                'user_id' => $user->id
+            ]);
+
+            $object = json_decode($request->participants);
+
+            foreach($object as $key => $data)
+            {
+                $participant = Participant::create([
+                    'conversations_id' => $group->id,
+                    'user_id' => $data->participants
+                ]);
+            }
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+            ], 200);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
     public function getConversations(Request $request)
     {
 
@@ -96,6 +140,11 @@ class CreateChatController extends Controller
             $conversations = Conversation::with(
 
                 [
+                    'usersConversation' => function ($query) {
+                        $query->orderBy('created_at', 'desc')->with(['UserParticipant' => function($query) {
+                            $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                        }]);
+                    },
                     'SenderConversation' => function ($query) {
                         $query->select('id', 'full_name', 'image');
                     },
@@ -112,7 +161,7 @@ class CreateChatController extends Controller
                 ]
 
             )->orderBy('last_time_message','desc')->where('sender_id', $auth_id)
-                ->orWhere('receiver_id', $auth_id)->
+                ->orWhere('receiver_id', $auth_id)->orWhere('admin_id', $auth_id)->
                 get();
 
 //            $conversations = Conversation::with('usersConversation')->where('sender_id', $auth_id)
@@ -142,6 +191,11 @@ class CreateChatController extends Controller
             $conversation = Conversation::with(
 
                 [
+                    'usersConversation' => function ($query) {
+                    $query->orderBy('created_at', 'desc')->with(['UserParticipant' => function($query) {
+                        $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                    }]);
+                    },
                     'SenderConversation' => function ($query) {
                         $query->select('id', 'full_name', 'image');
                     },

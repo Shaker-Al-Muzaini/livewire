@@ -30,7 +30,10 @@ Route::group([
 
     Route::prefix('user')->group(function () {
 
+        //create group chat
+        Route::post('creat_group_conversation',[CreateChatController::class, 'creatGroupConversation']);
 
+        //create peer chat
         Route::post('creat_conversation',[CreateChatController::class, 'creatConversation']);
         Route::post('get_one_conversation',[CreateChatController::class, 'getOneConversation']);
         Route::post('get_conversations',[CreateChatController::class, 'getConversations']);
