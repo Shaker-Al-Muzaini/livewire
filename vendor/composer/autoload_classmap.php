@@ -39,6 +39,7 @@ return array(
     'App\\Models\\Message' => $baseDir . '/app/Models/Message.php',
     'App\\Models\\Participant' => $baseDir . '/app/Models/Participant.php',
     'App\\Models\\Poll' => $baseDir . '/app/Models/Poll.php',
+    'App\\Models\\PollVote' => $baseDir . '/app/Models/PollVote.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
     'App\\Providers\\AuthServiceProvider' => $baseDir . '/app/Providers/AuthServiceProvider.php',

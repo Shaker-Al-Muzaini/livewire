@@ -10,7 +10,6 @@ class Poll extends Model
     use HasFactory;
 
     protected $fillable=[
-//        'user_id',
         'message_id',
         'poll_options',
     ];
@@ -20,9 +19,9 @@ class Poll extends Model
         return $this->belongsTo(Message::class, 'message_id', 'id');
     }
 
-//    public function PollUser(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-//    {
-//        return $this->belongsTo(User::class, 'user_id', 'id');
-//    }
+    public function pollVotes()
+    {
+        return $this->hasMany(PollVote::class);
+    }
 
 }

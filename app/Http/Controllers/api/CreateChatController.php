@@ -783,7 +783,79 @@ class CreateChatController extends Controller
         }
     }
 
+    public function PollVote(Request $request){
 
+        DB::beginTransaction();
+        try {
+
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+
+            $polls = PollVote::where('user_id', $request->user_id)->where('poll_id', $request->poll_id)->first();
+            if($polls == null){
+
+                $poll = Poll::find($request->poll_id);
+                $poll->rate = $poll->rate + $request->rate;
+                $poll->save();
+
+                $poll_vote = PollVote::create([
+                    'user_id' => $request->user_id,
+                    'poll_id' => $request->poll_id
+                ]);
+
+                DB::commit();
+
+                $new = PollVote::with(['PollVotePoll' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }])->with(['PollVoteUser' => function ($query) {
+                    $query->select('id', 'full_name', 'image');
+                }])->find($poll_vote->id);
+
+
+                $pusher->trigger('livewire-chat', 'poll-vote', [
+                    'poll_vote' => $new,
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                ], 200);
+
+            }else{
+
+                $poll = Poll::find($request->poll_id);
+                    $poll->rate = $poll->rate - 1;
+                $poll->save();
+
+                $polls->delete();
+
+                DB::commit();
+
+                $pusher->trigger('livewire-chat', 'poll-vote', [
+                    'poll_vote' => 'success',
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                ], 200);
+
+
+            }
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
 
 
 }

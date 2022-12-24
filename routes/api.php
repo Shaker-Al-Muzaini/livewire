@@ -70,6 +70,7 @@ Route::group([
 
         //poll
         Route::post('messages_poll', [CreateChatController::class, 'createPoll']);
+        Route::post('poll_vote', [CreateChatController::class, 'PollVote']);
 
     });
 
