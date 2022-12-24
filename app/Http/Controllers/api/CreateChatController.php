@@ -278,7 +278,7 @@ class CreateChatController extends Controller
                 'conversations_id' => $request->conversations_id,
                 ]);
 
-            return response()->json(['status' => $new]);
+            return response()->json(['status' => 'success']);
 
 
         } catch (\Exception $e) {
