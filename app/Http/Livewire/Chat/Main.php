@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Livewire\Chat; 
+namespace App\Http\Livewire\Chat;  
 
-use Livewire\Component;  
+use Livewire\Component;   
 
-class Main extends Component
+class Main extends Component 
 {
     public function render()  
     {
