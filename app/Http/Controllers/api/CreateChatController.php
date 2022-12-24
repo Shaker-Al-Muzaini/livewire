@@ -261,11 +261,20 @@ class CreateChatController extends Controller
                 'last_time_message' => $message->created_at
             ]);
 
+            $new = Message::with([ 'messages' => function ($query) {
+                $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
+                    $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                }])->with(['parent' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }])->with(['polls' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }]);
+            }])->find($message->id);
 
             $pusher->trigger('livewire-chat', 'message-sent', [
                 'user_id' => $request->user_id,
                 'message_id' => $message->id,
-                'message' => $message,
+                'message' => $new,
                 'conversations_id' => $request->conversations_id,
                 ]);
 
@@ -774,6 +783,8 @@ class CreateChatController extends Controller
             ], 500);
         }
     }
+
+
 
 
 }
