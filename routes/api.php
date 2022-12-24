@@ -68,6 +68,8 @@ Route::group([
         //replay
         Route::post('messages_replies', [CreateChatController::class, 'createReplay']);
 
+        //poll
+        Route::post('messages_poll', [CreateChatController::class, 'createPoll']);
 
     });
 

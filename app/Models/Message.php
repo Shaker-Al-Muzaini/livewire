@@ -21,6 +21,7 @@ class Message extends Model
         'is_image',
         'is_file',
         'is_voice',
+        'is_poll',
         'parent_id'
     ];
 
@@ -55,6 +56,11 @@ class Message extends Model
     public function replies()
     {
         return $this->hasMany(Message::class, 'parent_id');
+    }
+
+    public function polls()
+    {
+        return $this->hasMany(Poll::class);
     }
 
 }

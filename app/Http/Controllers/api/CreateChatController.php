@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Participant;
+use App\Models\Poll;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -156,6 +157,8 @@ class CreateChatController extends Controller
                             $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
                         }])->with(['parent' => function($query) {
                             $query->orderBy('created_at', 'desc');
+                        }])->with(['polls' => function($query) {
+                            $query->orderBy('created_at', 'desc');
                         }]);
                     }
                 ]
@@ -206,6 +209,8 @@ class CreateChatController extends Controller
                         $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
                             $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
                         }])->with(['parent' => function($query) {
+                            $query->orderBy('created_at', 'desc');
+                        }])->with(['polls' => function($query) {
                             $query->orderBy('created_at', 'desc');
                         }]);
                     }
@@ -260,7 +265,7 @@ class CreateChatController extends Controller
             $pusher->trigger('livewire-chat', 'message-sent', [
                 'user_id' => $request->user_id,
                 'message_id' => $message->id,
-                'message_body' => $request->message,
+                'message' => $message,
                 'conversations_id' => $request->conversations_id,
                 ]);
 
@@ -702,6 +707,62 @@ class CreateChatController extends Controller
 
             DB::commit();
             return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function createPoll(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+            $message = Message::create([
+                'user_id' => $request->user_id,
+                'message' => $request->message,
+                'conversations_id' => $request->conversations_id,
+                'is_poll' => true,
+            ]);
+
+            $conversation = Conversation::where('id', $request->conversations_id)->update([
+                'last_time_message' => $message->created_at
+            ]);
+
+            $object = json_decode($request->poll_options);
+
+            foreach($object as $key => $data)
+            {
+                $poll_options = Poll::create([
+                    'message_id' => $message->id,
+                    'poll_options' => $data->poll_options
+                ]);
+            }
+
+            $pusher->trigger('livewire-chat', 'message-replay', [
+                'user_id' => $request->user_id,
+                'poll_options' => $request->poll_options,
+                'message' => $message,
+                'conversations_id' => $request->conversations_id,
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+            ], 200);
 
         } catch (\Exception $e) {
             // Return Json Response
