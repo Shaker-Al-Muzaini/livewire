@@ -20,6 +20,7 @@ class Message extends Model
         'pin',
         'is_image',
         'is_file',
+        'is_voice',
         'parent_id'
     ];
 

@@ -47,6 +47,10 @@ Route::group([
         //send a file
         Route::post('/file_messages', [CreateChatController::class, 'submitFile']);
 
+        //send a voice
+        Route::post('/voice_messages', [CreateChatController::class, 'submitVoice']);
+
+
         //user status
         Route::post('/user_status',  [CreateChatController::class, 'updateStatus']);
 

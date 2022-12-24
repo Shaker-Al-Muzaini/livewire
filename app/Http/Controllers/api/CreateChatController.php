@@ -329,7 +329,7 @@ class CreateChatController extends Controller
         try {
             // Validate the request data
             $this->validate($request, [
-                'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:16384',
             ]);
 
             $imageName = Str::random(32) . "." . $request->image->getClientOriginalExtension();
@@ -390,14 +390,14 @@ class CreateChatController extends Controller
         try {
             // Validate the request data
             $this->validate($request, [
-                'file' => 'file|max:8192',
+                'file' => 'file|max:16384',
             ]);
 
             $file = $request->file('file');
 
             $name = $file->getClientOriginalName();
 
-            // If an image was uploaded, store it in the file system or cloud storage
+            // If a file was uploaded, store it in the file system or cloud storage
             if ($request->hasFile('file')) {
                 Storage::disk('public')->put('files/' . $name, file_get_contents($request->file));
             }
@@ -425,6 +425,68 @@ class CreateChatController extends Controller
             );
 
             $pusher->trigger('livewire-chat', 'new-file-message', [
+                'url' => $path,
+                'conversation_id' => $request->conversation_id,
+                'user_id' => $request->user_id
+            ]);
+
+            DB::commit();
+            return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+
+    }
+
+    public function submitVoice(Request $request)
+    {
+
+        DB::beginTransaction();
+        try {
+            // Validate the request data
+            $this->validate($request, [
+                'file' => 'file|max:16384',
+            ]);
+
+            $voice = $request->file('file');
+
+            $name = $voice->getClientOriginalName();
+
+            // If a voice was uploaded, store it in the file system or cloud storage
+            if ($request->hasFile('file')) {
+                Storage::disk('public')->put('voices/' . $name, file_get_contents($request->$voice));
+            }
+
+            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/voices/' . $name;
+
+
+            $message = Message::create([
+                'user_id' => $request->user_id,
+                'message' => $path,
+                'conversations_id' => $request->conversations_id,
+                'is_voice' => true
+            ]);
+
+            $conversation = Conversation::where('id', $request->conversations_id)->update([
+                'last_time_message' => $message->created_at
+            ]);
+
+            // Trigger a new-voice-message event to Pusher
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+            $pusher->trigger('livewire-chat', 'new-voice-message', [
                 'url' => $path,
                 'conversation_id' => $request->conversation_id,
                 'user_id' => $request->user_id
