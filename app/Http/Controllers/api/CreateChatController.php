@@ -692,7 +692,7 @@ class CreateChatController extends Controller
             ]);
 
 
-            $pusher->trigger('livewire-chat', 'MessageSent', [
+            $pusher->trigger('livewire-chat', 'message-replay', [
                 'parent_id' => $request->parent_id,
                 'user_id' => $request->user_id,
                 'message_id' => $message->id,
