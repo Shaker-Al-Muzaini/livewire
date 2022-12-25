@@ -22,22 +22,6 @@ class Conversation extends Model
         'company_NO',
     ];
 
-    //relationships
-
-//    public function messages( )
-//    {
-//return $this->hasMany(Message::class);
-//
-//        # code...
-//    }
-//
-//    public function user( )
-//    {
-//   return $this->belongsTo(User::class);
-//        # code...
-//    }
-
-
     public function AdminConversation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id', 'id');
@@ -53,8 +37,6 @@ class Conversation extends Model
         return $this->belongsTo(User::class, 'receiver_id', 'id');
     }
 
-
-
     public function messages(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Message::class, 'conversations_id' , 'id');
@@ -63,6 +45,11 @@ class Conversation extends Model
     public function usersConversation()
     {
         return $this->hasMany(Participant::class , 'conversations_id' , 'id');
+    }
+
+    public function pinnsConversation()
+    {
+        return $this->hasMany(PinnedMessage::class , 'conversations_id' , 'id');
     }
 
 }

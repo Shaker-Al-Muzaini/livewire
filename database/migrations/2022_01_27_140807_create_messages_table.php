@@ -23,9 +23,7 @@ class CreateMessagesTable extends Migration
             $table->foreign('conversations_id')->references('id')->on('conversations');
             $table->text('message')->nullable();;
             $table->string('emoji')->nullable();
-            $table->boolean('star')->default(0);
             $table->boolean('read')->default(0);
-            $table->boolean('pin')->default(0);
             $table->boolean('is_image')->default(0);
             $table->boolean('is_file')->default(0);
             $table->boolean('is_voice')->default(0);

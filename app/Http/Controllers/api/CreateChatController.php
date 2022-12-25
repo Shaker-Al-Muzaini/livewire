@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Participant;
+use App\Models\PinnedMessage;
 use App\Models\Poll;
 use App\Models\PollVote;
+use App\Models\StarredMessage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +33,19 @@ class CreateChatController extends Controller
                 'ReceiverConversation' => function ($query) {
                     $query->select('id', 'full_name', 'image');
                 },
-                'messages'
+                'messages' => function ($query) {
+                    $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
+                        $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                    }])->with(['parent' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }])->with(['polls' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }])->with(['starmessages' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }])->with(['pinmessages' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }]);
+                }
             ])
                 ->where('receiver_id', $request->sender_id)
                 ->where('sender_id', $request->receiver_id)
@@ -160,6 +174,10 @@ class CreateChatController extends Controller
                             $query->orderBy('created_at', 'desc');
                         }])->with(['polls' => function($query) {
                             $query->orderBy('created_at', 'desc');
+                        }])->with(['starmessages' => function($query) {
+                            $query->orderBy('created_at', 'desc');
+                        }])->with(['pinmessages' => function($query) {
+                            $query->orderBy('created_at', 'desc');
                         }]);
                     }
                 ]
@@ -212,6 +230,10 @@ class CreateChatController extends Controller
                         }])->with(['parent' => function($query) {
                             $query->orderBy('created_at', 'desc');
                         }])->with(['polls' => function($query) {
+                            $query->orderBy('created_at', 'desc');
+                        }])->with(['starmessages' => function($query) {
+                            $query->orderBy('created_at', 'desc');
+                        }])->with(['pinmessages' => function($query) {
                             $query->orderBy('created_at', 'desc');
                         }]);
                     }
@@ -458,7 +480,7 @@ class CreateChatController extends Controller
 
     }
 
-    public function submitVoice(Request $request)
+    public function submitVoice(Request $request): \Illuminate\Http\JsonResponse
     {
 
         DB::beginTransaction();
@@ -520,7 +542,8 @@ class CreateChatController extends Controller
 
     }
 
-    public function updateStatus(Request $request){
+    public function updateStatus(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         DB::beginTransaction();
         try {
@@ -564,16 +587,57 @@ class CreateChatController extends Controller
     }
 
 
-    public function pinMessage(Request $request){
+    public function pinMessage(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         DB::beginTransaction();
         try {
 
-            $message = Message::find($request->message_id);
 
-            // Toggle the message's "pinned" field
-            $message->pin = !$message->pin;
-            $message->save();
+            $pinned = PinnedMessage::where('user_id',$request->user_id)
+                ->where('conversations_id', $request->conversations_id)->first();
+
+            if($pinned != null){
+
+                if($pinned->message_id != $request->message_id){
+
+                    $pinned->delete();
+
+                    PinnedMessage::create([
+                        'user_id' => $request->user_id,
+                        'conversations_id' => $request->conversations_id,
+                        'message_id' => $request->message_id,
+                        'pin' => true,
+                    ]);
+
+                }else{
+                    $message_pin = PinnedMessage::where('message_id',$request->message_id)
+                        ->where('user_id', $request->user_id)->where('conversations_id', $request->conversations_id)->delete();
+
+                }
+            }else{
+                $message_pin = PinnedMessage::where('message_id',$request->message_id)
+                    ->where('user_id', $request->user_id)->where('conversations_id', $request->conversations_id)->first();
+
+                if($message_pin != null){
+
+                    $message_pin->delete();
+
+                }else{
+
+                    PinnedMessage::create([
+                        'user_id' => $request->user_id,
+                        'conversations_id' => $request->conversations_id,
+                        'message_id' => $request->message_id,
+                        'pin' => true,
+                    ]);
+
+                }
+            }
+
+
+            DB::commit();
+            $message = Message::with('pinmessages')->find($request->message_id);
 
             // Trigger a message-pinned event to Pusher
             $pusher = new Pusher(
@@ -587,10 +651,9 @@ class CreateChatController extends Controller
                 'message' => $message->id,
             ]);
 
-            DB::commit();
             return response()->json([
                 'status' => 'success',
-                'message' => $message,
+                '   message' => $message
             ]);
 
         } catch (\Exception $e) {
@@ -605,17 +668,30 @@ class CreateChatController extends Controller
     }
 
 
-    public function starMessage(Request $request){
+    public function starMessage(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         DB::beginTransaction();
         try {
 
-            $message = Message::find($request->message_id);
 
-            // Toggle the message's "starred" field
-            $message->star = !$message->star;
-            $message->save();
+            $message_star = StarredMessage::where('message_id',$request->message_id)
+            ->where('user_id', $request->user_id)->first();
 
+
+            if($message_star != null){
+
+                $message_star->delete();
+
+            }else{
+
+                StarredMessage::create([
+                    'user_id' => $request->user_id,
+                    'message_id' => $request->message_id,
+                    'star' => true,
+                ]);
+
+            }
 
             // Trigger a new-image-message event to Pusher
             $pusher = new Pusher(
@@ -625,11 +701,15 @@ class CreateChatController extends Controller
                 array('cluster' => 'mt1')
             );
 
+
+            DB::commit();
+            $message = Message::with('starmessages')->find($request->message_id);
+
+
             $pusher->trigger('livewire-chat', 'message-starred', [
                 'message' => $message->id,
             ]);
 
-            DB::commit();
             return response()->json([
                 'status' => 'success',
                 'message' => $message,
@@ -641,47 +721,72 @@ class CreateChatController extends Controller
             return response()->json([
                 'message' => "Something went really wrong!",
                 'error' => $e->getMessage()
-
             ], 500);
         }
     }
 
-    public function starGetConversation(Request $request){
+    public function starGetConversation(Request $request): \Illuminate\Http\JsonResponse
+    {
 
-        DB::beginTransaction();
         try {
 
-
-            $message = Message::with([
-                'MessageConversation' => function ($query) {
-                    $query->select('id');
+            $message_star = StarredMessage::with([
+                'MessageStarredMessage' => function ($query){
+                    $query->select('id','user_id', 'conversations_id')->with([
+                        'MessageUser' => function ($query) {
+                            $query->select('id', 'full_name', 'image');
+                        }
+                    ]);
                 },
-                'MessageUser' => function ($query) {
-                    $query->select('id', 'full_name', 'image','created_at');
-                },
-            ])->where('id', $request->message_id)->first();
+            ])->select('id', 'message_id', 'user_id', 'star')->find($request->star_message);
 
-
-            DB::commit();
             return response()->json([
                 'status' => 'success',
-                'message' => $message,
+                'message_star' => $message_star,
             ]);
 
         } catch (\Exception $e) {
             // Return Json Response
-            DB::rollBack();
             return response()->json([
                 'message' => "Something went really wrong!",
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
+    public function starGetAll(Request $request): \Illuminate\Http\JsonResponse
+    {
+
+        try {
+
+            $message_star = StarredMessage::with([
+                'MessageStarredMessage' => function ($query){
+                    $query->select('id','user_id', 'conversations_id')->with([
+                        'MessageUser' => function ($query) {
+                            $query->select('id', 'full_name', 'image');
+                        }
+                    ]);
+                },
+            ])->select('id', 'message_id', 'user_id', 'star')->where('user_id',$request->user_id)->latest()->get();
+
+            return response()->json([
+                'status' => 'success',
+                'message_star' => $message_star,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
 
 
-    public function createReplay(Request $request){
+    public function createReplay(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         DB::beginTransaction();
         try {
@@ -727,7 +832,8 @@ class CreateChatController extends Controller
         }
     }
 
-    public function createPoll(Request $request){
+    public function createPoll(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         DB::beginTransaction();
         try {
@@ -783,7 +889,8 @@ class CreateChatController extends Controller
         }
     }
 
-    public function PollVote(Request $request){
+    public function PollVote(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         DB::beginTransaction();
         try {

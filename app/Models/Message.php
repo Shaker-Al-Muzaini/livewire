@@ -16,27 +16,12 @@ class Message extends Model
         'message',
         'emoji',
         'read',
-        'star',
-        'pin',
         'is_image',
         'is_file',
         'is_voice',
         'is_poll',
         'parent_id'
     ];
-
-
-//    public function conversation()
-//    {
-//        return $this->belongsTo(Conversation::class);
-//        # code...
-//    }
-//
-//    public function user( )
-//    {
-//        return $this->belongsTo(User::class ,'sender_id');
-//        # code...
-//    }
 
     public function MessageConversation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
@@ -48,19 +33,29 @@ class Message extends Model
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function parent()
+    public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Message::class, 'parent_id');
     }
 
-    public function replies()
+    public function replies(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Message::class, 'parent_id');
     }
 
-    public function polls()
+    public function polls(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Poll::class);
+    }
+
+    public function starmessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StarredMessage::class);
+    }
+
+    public function pinmessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PinnedMessage::class);
     }
 
 }

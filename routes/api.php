@@ -63,7 +63,7 @@ Route::group([
         //star
         Route::post('star_message',[CreateChatController::class, 'starMessage']);
         Route::post('star_get_conversation',[CreateChatController::class, 'starGetConversation']);
-//        Route::post('star_get_all',[CreateChatController::class, 'starGetAll']);
+        Route::post('star_get_all',[CreateChatController::class, 'starGetAll']);
 
         //replay
         Route::post('messages_replies', [CreateChatController::class, 'createReplay']);

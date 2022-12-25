@@ -60,6 +60,29 @@ class User extends Authenticatable
         return $this->hasMany(User::class,'receiver_id','id');
     }
 
+    public function messages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Message::class,'user_id','id');
+    }
 
+    public function stars(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StarredMessage::class,'user_id','id');
+    }
+
+    public function pins(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PinnedMessage::class,'user_id','id');
+    }
+
+    public function pollsVotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PollVote::class,'user_id','id');
+    }
+
+    public function participants(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Participant::class,'user_id','id');
+    }
 
 }
