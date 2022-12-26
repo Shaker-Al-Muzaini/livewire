@@ -285,18 +285,22 @@ class CreateChatController extends Controller
             ]);
             DB::commit();
 
-            $new = Message::with(['parent' => function($query) {
+            $newMessage = Message::with(['parent' => function($query) {
                     $query->orderBy('created_at', 'desc');
                 }])->with(['polls' => function($query) {
                     $query->orderBy('created_at', 'desc');
                 }])->with(['MessageUser' => function ($query) {
                 $query->select('id', 'full_name', 'image');
-            }])->find($message->id);
+                }])->with(['starmessages' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }])->with(['pinmessages' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }])->find($message->id);
 
             $pusher->trigger('livewire-chat', 'message-sent', [
                 'user_id' => $request->user_id,
                 'message_id' => $message->id,
-                'message' => $new,
+                'message' => $newMessage,
                 'conversations_id' => $request->conversations_id,
                 ]);
 
@@ -397,13 +401,25 @@ class CreateChatController extends Controller
                 array('cluster' => 'mt1')
             );
 
+            DB::commit();
+            $newMessage = Message::with(['parent' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['polls' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['MessageUser' => function ($query) {
+                $query->select('id', 'full_name', 'image');
+            }])->with(['starmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['pinmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->find($message->id);
+
             $pusher->trigger('livewire-chat', 'new-image-message', [
-                'url' => $path,
+                'message' => $newMessage,
                 'conversation_id' => $request->conversation_id,
                 'user_id' => $request->user_id
             ]);
 
-            DB::commit();
             return response()->json(['status' => 'success']);
 
         } catch (\Exception $e) {
@@ -458,14 +474,27 @@ class CreateChatController extends Controller
                 '1526965',
                 array('cluster' => 'mt1')
             );
+            DB::commit();
+
+
+            $newMessage = Message::with(['parent' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['polls' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['MessageUser' => function ($query) {
+                $query->select('id', 'full_name', 'image');
+            }])->with(['starmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['pinmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->find($message->id);
 
             $pusher->trigger('livewire-chat', 'new-file-message', [
-                'url' => $path,
+                'message' => $newMessage,
                 'conversation_id' => $request->conversation_id,
                 'user_id' => $request->user_id
             ]);
 
-            DB::commit();
             return response()->json(['status' => 'success']);
 
         } catch (\Exception $e) {
@@ -520,14 +549,26 @@ class CreateChatController extends Controller
                 '1526965',
                 array('cluster' => 'mt1')
             );
+            DB::commit();
+
+            $newMessage = Message::with(['parent' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['polls' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['MessageUser' => function ($query) {
+                $query->select('id', 'full_name', 'image');
+            }])->with(['starmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['pinmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->find($message->id);
 
             $pusher->trigger('livewire-chat', 'new-voice-message', [
-                'url' => $path,
+                'message' => $newMessage,
                 'conversation_id' => $request->conversation_id,
                 'user_id' => $request->user_id
             ]);
 
-            DB::commit();
             return response()->json(['status' => 'success']);
 
         } catch (\Exception $e) {
