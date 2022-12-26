@@ -416,7 +416,7 @@ class CreateChatController extends Controller
 
             $pusher->trigger('livewire-chat', 'new-image-message', [
                 'message' => $newMessage,
-                'conversation_id' => $request->conversation_id,
+                'conversation_id' => $request->conversations_id,
                 'user_id' => $request->user_id
             ]);
 
@@ -491,7 +491,7 @@ class CreateChatController extends Controller
 
             $pusher->trigger('livewire-chat', 'new-file-message', [
                 'message' => $newMessage,
-                'conversation_id' => $request->conversation_id,
+                'conversation_id' => $request->conversations_id,
                 'user_id' => $request->user_id
             ]);
 
