@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Events; 
+namespace App\Events;  
 
 use App\Models\Conversation;
 use App\Models\Message;
