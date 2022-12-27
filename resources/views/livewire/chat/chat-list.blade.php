@@ -1,14 +1,14 @@
 <div>
-    {{-- Care about people's approval and you will be their prisoner. --}} 
+    {{-- Care about people's approval and  you will be their prisoner. --}} 
 
     <div class="chatlist_header">
   
-        <div class="title">  
-            Chat 
+        <div class="title">    
+            Chat  
         </div>
   
         <div class="img_container">  
-            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->name}}" alt="noo">  
+            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->name}}" alt="noo">   
         </div>
     </div>
   
