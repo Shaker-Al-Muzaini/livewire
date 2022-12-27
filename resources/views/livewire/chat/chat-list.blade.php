@@ -3,19 +3,19 @@
 
     <div class="chatlist_header">
 
-        <div class="title">
+        <div class="title"> 
             Chat
         </div>
-
+ 
         <div class="img_container">
             <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt="">
         </div>
     </div>
 
     <div class="chatlist_body">
-
+ 
         @if (count($conversations) > 0)
-            @foreach ($conversations as $conversation)
+            @foreach ($conversations as $conversation) 
                 <div class="chatlist_item " wire:key='{{$conversation->id}}' wire:click="$emit('chatUserSelected', {{$conversation}},{{$this->getChatUserInstance($conversation, $name = 'id') }})">
                     <div class="chatlist_img_container">
 
