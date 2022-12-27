@@ -25,16 +25,16 @@
 
                     <div class="chatlist_info">
                         <div class="top_row">
-                            <div class="list_username">{{ $this->getChatUserInstance($conversation, $name = 'name') }}
+                            <div class="list_username">{{ $this->getChatUserInstance($conversation, $name = 'full_name') }}
                             </div>
                             <span class="date">
                                 {{ $conversation->messages->last()?->created_at->shortAbsoluteDiffForHumans() }}</span>
                         </div>
 
-                        <div class="bottom_row">
+                        <div class="bottom_row"> 
 
-                            <div class="message_body text-truncate">
-                                {{ $conversation->messages->last()->body}}
+                            <div class="message_body text-truncate"> 
+                                {{ $conversation->messages->last()->body}}  
                             </div>
 
                             @php
