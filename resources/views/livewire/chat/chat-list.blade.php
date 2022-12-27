@@ -8,7 +8,7 @@
         </div>
   
         <div class="img_container"> 
-            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt=""> 
+            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->fu}}" alt=""> 
         </div>
     </div>
 
@@ -51,10 +51,10 @@
                     </div>
                 </div>
 
-
+ 
 
             @endforeach
-
+ 
 
         @else
             you have no conversations
