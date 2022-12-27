@@ -107,6 +107,8 @@ class CreateChatController extends Controller
         DB::beginTransaction();
         try {
 
+
+
             $user = User::find($request->user_id);
 
             $group = Conversation::create([
@@ -121,13 +123,13 @@ class CreateChatController extends Controller
                 'user_id' => $user->id
             ]);
 
-            $object = json_decode($request->participants);
+//            $object = json_decode($request->participants);
 
-            foreach($object as $key => $data)
+            foreach($request->participants as $key => $data)
             {
                 $participant = Participant::create([
                     'conversations_id' => $group->id,
-                    'user_id' => $data->participants
+                    'user_id' => $data
                 ]);
             }
             DB::commit();
@@ -897,13 +899,12 @@ class CreateChatController extends Controller
                 'last_time_message' => $message->created_at
             ]);
 
-            $object = json_decode($request->poll_options);
 
-            foreach($object as $key => $data)
+            foreach($request->poll_options as $key => $data)
             {
                 $poll_options = Poll::create([
                     'message_id' => $message->id,
-                    'poll_options' => $data->poll_options
+                    'poll_options' => $data
                 ]);
             }
 
