@@ -8,10 +8,10 @@
         </div>
   
         <div class="img_container"> 
-            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt=""> 
+            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt="noo"> 
         </div>
     </div>
-
+ 
     <div class="chatlist_body">
  
         @if (count($conversations) > 0)
@@ -23,13 +23,13 @@
                             alt="">
                     </div>
 
-                    <div class="chatlist_info">
+                    <div class="chatlist_info"> 
                         <div class="top_row">
-                            <div class="list_username">{{ $this->getChatUserInstance($conversation, $name = 'full_name') }}
+                            <div class="list_username">{{ $this->getChatUserInstance($conversation, $name = 'full_name') }} 
                             </div>
                             <span class="date">
-                                {{ $conversation->messages->last()?->created_at->shortAbsoluteDiffForHumans() }}</span>
-                        </div>
+                                {{ $conversation->messages->last()?->created_at->shortAbsoluteDiffForHumans() }}</span> 
+                        </div> 
 
                         <div class="bottom_row"> 
 
