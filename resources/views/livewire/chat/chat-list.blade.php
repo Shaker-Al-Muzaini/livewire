@@ -2,7 +2,7 @@
     {{-- Care about people's approval and you will be their prisoner. --}}
 
     <div class="chatlist_header">
-
+ 
         <div class="title"> 
             Chat 
         </div>
@@ -27,7 +27,7 @@
                         <div class="top_row">
                             <div class="list_username">{{ $this->getChatUserInstance($conversation, $name = 'full_name') }} 
                             </div>
-                            <span class="date">
+                            <span class="date"> 
                                 {{ $conversation->messages->last()?->created_at->shortAbsoluteDiffForHumans() }}</span> 
                         </div> 
 
