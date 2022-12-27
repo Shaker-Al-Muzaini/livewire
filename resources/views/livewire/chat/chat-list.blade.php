@@ -8,7 +8,7 @@
         </div>
   
         <div class="img_container"> 
-            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt="noo"> 
+            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->name}}" alt="noo"> 
         </div>
     </div>
  
@@ -22,7 +22,7 @@
                         <img src="https://ui-avatars.com/api/?name={{$this->getChatUserInstance($conversation, $name = 'name')}}"
                             alt="">
                     </div>
-
+ 
                     <div class="chatlist_info"> 
                         <div class="top_row">
                             <div class="list_username">{{ $this->getChatUserInstance($conversation, $name = 'full_name') }} 
