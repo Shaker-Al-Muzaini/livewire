@@ -4,11 +4,11 @@
     <div class="chatlist_header">
 
         <div class="title"> 
-            Chat
+            Chat 
         </div>
- 
-        <div class="img_container">
-            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt="">
+  
+        <div class="img_container"> 
+            <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={{auth()->user()->full_name}}" alt=""> 
         </div>
     </div>
 
