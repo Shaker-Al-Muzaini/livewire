@@ -155,41 +155,36 @@ class CreateChatController extends Controller
 
             $auth_id = $request->user_id;
 
-            $conversations = Conversation::with(
-
-                [
-                    'usersConversation' => function ($query) {
-                        $query->orderBy('created_at', 'desc')->with(['UserParticipant' => function($query) {
-                            $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
-                        }]);
-                    },
-                    'SenderConversation' => function ($query) {
-                        $query->select('id', 'full_name', 'image');
-                    },
-                    'ReceiverConversation' => function ($query) {
-                        $query->select('id', 'full_name', 'image');
-                    },
-                    'messages' => function ($query) {
-                        $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
-                            $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
-                        }])->with(['parent' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['polls' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['starmessages' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['pinmessages' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }]);
-                    }
-                ]
-
-            )->orderBy('last_time_message','desc')->where('sender_id', $auth_id)
-                ->orWhere('receiver_id', $auth_id)->orWhere('admin_id', $auth_id)->
-                get();
-
-//            $conversations = Conversation::with('usersConversation')->where('sender_id', $auth_id)
-//                ->orWhere('receiver_id', $auth_id)->get();
+            $conversations = Participant::with([
+                'ConversationParticipant' => function($query){
+                    $query->orderBy('last_time_message','desc')->with([
+                        'usersConversation' => function ($query) {
+                            $query->orderBy('created_at', 'desc')->with(['UserParticipant' => function($query) {
+                                $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                            }]);
+                        },
+                        'SenderConversation' => function ($query) {
+                            $query->select('id', 'full_name', 'image');
+                        },
+                        'ReceiverConversation' => function ($query) {
+                            $query->select('id', 'full_name', 'image');
+                        },
+                        'messages' => function ($query) {
+                            $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
+                                $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                            }])->with(['parent' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }])->with(['polls' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }])->with(['starmessages' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }])->with(['pinmessages' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }]);
+                        }
+                    ]);
+                }
+            ])->where('user_id', $auth_id)->get();
 
             return response()->json([
                 'status' => 'success',
