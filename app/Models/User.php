@@ -20,7 +20,7 @@ class User extends Authenticatable
      */
 
 
-    protected $connection = 'mysql_2';
+        protected $connection = 'mysql_2';
 
 
 
@@ -73,6 +73,16 @@ class User extends Authenticatable
     public function pins(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PinnedMessage::class,'user_id','id');
+    }
+
+    public function emojis(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EmojiMessage::class,'user_id','id');
+    }
+
+    public function mutes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MutedConversation::class,'user_id','id');
     }
 
     public function pollsVotes(): \Illuminate\Database\Eloquent\Relations\HasMany

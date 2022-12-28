@@ -22,7 +22,7 @@ class CreateMessagesTable extends Migration
             $table->bigInteger('conversations_id')->unsigned();
             $table->foreign('conversations_id')->references('id')->on('conversations');
             $table->text('message')->nullable();;
-            $table->string('emoji')->nullable();
+//            $table->string('emoji')->nullable();
             $table->boolean('read')->default(0);
             $table->boolean('is_image')->default(0);
             $table->boolean('is_file')->default(0);

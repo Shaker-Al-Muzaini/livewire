@@ -16,9 +16,9 @@ class CreateParticipantsTable extends Migration
         Schema::create('participants', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('user_id')->unsigned();
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->bigInteger('conversations_id')->unsigned();
-            $table->foreign('conversations_id')->references('id')->on('conversations');
+            $table->foreign('conversations_id')->references('id')->on('conversations')->cascadeOnDelete();
             $table->timestamps();
         });
     }

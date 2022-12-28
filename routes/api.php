@@ -72,6 +72,15 @@ Route::group([
         Route::post('messages_poll', [CreateChatController::class, 'createPoll']);
         Route::post('poll_vote', [CreateChatController::class, 'PollVote']);
 
+        //mute
+        Route::post('mute_conversation',[CreateChatController::class, 'muteConversation']);
+
+        //invite participant to group
+        Route::post('invite_participant_conversation',[CreateChatController::class, 'inviteParticipantConversation']);
+
+        //star
+        Route::post('emoji_message',[CreateChatController::class, 'emojiMessage']);
+
     });
 
 });

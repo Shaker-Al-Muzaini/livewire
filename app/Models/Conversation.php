@@ -13,13 +13,13 @@ class Conversation extends Model
         'name',
         'image',
         'type',
-        'pin',
-        'mute',
+//        'mute',
         'last_time_message',
         'admin_id',
         'sender_id',
         'receiver_id',
         'company_NO',
+        'company_group'
     ];
 
     public function AdminConversation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -50,6 +50,11 @@ class Conversation extends Model
     public function pinnsConversation()
     {
         return $this->hasMany(PinnedMessage::class , 'conversations_id' , 'id');
+    }
+
+    public function mutesConversation()
+    {
+        return $this->hasMany(MutedConversation::class , 'conversations_id' , 'id');
     }
 
 }

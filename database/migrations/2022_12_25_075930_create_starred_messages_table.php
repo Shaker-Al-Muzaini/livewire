@@ -16,7 +16,7 @@ class CreateStarredMessagesTable extends Migration
         Schema::create('starred_messages', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('message_id')->unsigned();
-            $table->foreign('message_id')->references('id')->on('messages');
+            $table->foreign('message_id')->references('id')->on('messages')->cascadeOnDelete();
             $table->bigInteger('user_id')->unsigned();
             $table->foreign('user_id')->references('id')->on('users');
             $table->boolean('star')->default(false);

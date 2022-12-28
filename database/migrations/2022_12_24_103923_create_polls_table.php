@@ -16,7 +16,7 @@ class CreatePollsTable extends Migration
         Schema::create('polls', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('message_id')->unsigned();
-            $table->foreign('message_id')->references('id')->on('messages');
+            $table->foreign('message_id')->references('id')->on('messages')->cascadeOnDelete();
             $table->text('poll_options')->nullable();
             $table->integer('rate')->default('0');
             $table->timestamps();

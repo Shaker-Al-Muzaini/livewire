@@ -21,8 +21,8 @@ class CreateConversationsTable extends Migration
             $table->string('name')->nullable();
             $table->text('image')->nullable();
             $table->string('type')->nullable();
-            $table->boolean('pin')->default(0);
-            $table->boolean('mute')->default(0);
+//            $table->boolean('pin')->default(0);
+//            $table->boolean('mute')->default(0);
             $table->timestamp('last_time_message')->nullable();
             $table->bigInteger('admin_id')->unsigned()->nullable();
             $table->foreign('admin_id')->references('id')->on('users');

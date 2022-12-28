@@ -14,7 +14,7 @@ class Message extends Model
         'user_id',
         'conversations_id',
         'message',
-        'emoji',
+//        'emoji',
         'read',
         'is_image',
         'is_file',
@@ -56,6 +56,11 @@ class Message extends Model
     public function pinmessages(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PinnedMessage::class);
+    }
+
+    public function emojimessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EmojiMessage::class);
     }
 
 }

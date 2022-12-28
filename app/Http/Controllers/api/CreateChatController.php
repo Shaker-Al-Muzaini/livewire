@@ -4,7 +4,9 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
+use App\Models\EmojiMessage;
 use App\Models\Message;
+use App\Models\MutedConversation;
 use App\Models\Participant;
 use App\Models\PinnedMessage;
 use App\Models\Poll;
@@ -39,7 +41,11 @@ class CreateChatController extends Controller
                     }])->with(['parent' => function($query) {
                         $query->orderBy('created_at', 'desc');
                     }])->with(['polls' => function($query) {
-                        $query->orderBy('created_at', 'desc');
+                        $query->orderBy('created_at', 'desc')->with([
+                            'pollVotes' => function($query){
+                                $query->orderBy('created_at', 'desc');
+                            }
+                        ]);
                     }])->with(['starmessages' => function($query) {
                         $query->orderBy('created_at', 'desc');
                     }])->with(['pinmessages' => function($query) {
@@ -61,7 +67,7 @@ class CreateChatController extends Controller
                     'type' => 'peer',
                     'sender_id' => $request->sender_id,
                     'receiver_id' => $request->receiver_id,
-                    'company_NO' => $user->company_NO
+//                    'company_NO' => $user->company_NO
                 ]);
 
                 $participant = Participant::create([
@@ -107,23 +113,19 @@ class CreateChatController extends Controller
         DB::beginTransaction();
         try {
 
-
-
             $user = User::find($request->user_id);
 
             $group = Conversation::create([
                'name' => $request->group_name,
                'type' => 'group',
                'admin_id' => $user->id,
-                'company_NO' => $user->company_NO
+//                'company_NO' => $user->company_NO
             ]);
 
             Participant::create([
                 'conversations_id' => $group->id,
                 'user_id' => $user->id
             ]);
-
-//            $object = json_decode($request->participants);
 
             foreach($request->participants as $key => $data)
             {
@@ -175,7 +177,11 @@ class CreateChatController extends Controller
                             }])->with(['parent' => function($query) {
                                 $query->orderBy('created_at', 'desc');
                             }])->with(['polls' => function($query) {
-                                $query->orderBy('created_at', 'desc');
+                                $query->orderBy('created_at', 'desc')->with([
+                                    'pollVotes' => function($query){
+                                        $query->orderBy('created_at', 'desc');
+                                    }
+                                ]);
                             }])->with(['starmessages' => function($query) {
                                 $query->orderBy('created_at', 'desc');
                             }])->with(['pinmessages' => function($query) {
@@ -207,44 +213,44 @@ class CreateChatController extends Controller
 
         try {
 
-            $conversation = Conversation::with(
-
-                [
-                    'usersConversation' => function ($query) {
-                    $query->orderBy('created_at', 'desc')->with(['UserParticipant' => function($query) {
-                        $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
-                    }]);
-                    },
-                    'SenderConversation' => function ($query) {
-                        $query->select('id', 'full_name', 'image');
-                    },
-                    'ReceiverConversation' => function ($query) {
-                        $query->select('id', 'full_name', 'image');
-                    },
-                    'messages' => function ($query) {
-                        $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
-                            $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
-                        }])->with(['parent' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['polls' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['starmessages' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['pinmessages' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }]);
-                    }
-                ]
-
-            )->orderBy('last_time_message','desc')
-                ->where('id',$request->conversation_id)->first();
-
-//            $conversations = Conversation::with('usersConversation')->where('sender_id', $auth_id)
-//                ->orWhere('receiver_id', $auth_id)->get();
+            $conversations = Participant::with([
+                'ConversationParticipant' => function($query){
+                    $query->orderBy('last_time_message','desc')->with([
+                        'usersConversation' => function ($query) {
+                            $query->orderBy('created_at', 'desc')->with(['UserParticipant' => function($query) {
+                                $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                            }]);
+                        },
+                        'SenderConversation' => function ($query) {
+                            $query->select('id', 'full_name', 'image');
+                        },
+                        'ReceiverConversation' => function ($query) {
+                            $query->select('id', 'full_name', 'image');
+                        },
+                        'messages' => function ($query) {
+                            $query->orderBy('created_at', 'desc')->with(['MessageUser' => function($query) {
+                                $query->orderBy('created_at', 'desc')->select('id', 'full_name', 'image');
+                            }])->with(['parent' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }])->with(['polls' => function($query) {
+                                $query->orderBy('created_at', 'desc')->with([
+                                    'pollVotes' => function($query){
+                                        $query->orderBy('created_at', 'desc');
+                                    }
+                                ]);
+                            }])->with(['starmessages' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }])->with(['pinmessages' => function($query) {
+                                $query->orderBy('created_at', 'desc');
+                            }]);
+                        }
+                    ]);
+                }
+            ])->where('conversations_id', $request->conversation_id)->first();
 
             return response()->json([
                 'status' => 'success',
-                'conversation' => $conversation,
+                'conversations' => $conversations,
             ], 200);
 
 
@@ -441,16 +447,14 @@ class CreateChatController extends Controller
                 'file' => 'file|max:16384',
             ]);
 
-            $file = $request->file('file');
-
-            $name = $file->getClientOriginalName();
+            $imageName = Str::random(32) . "." . $request->file->getClientOriginalExtension();
 
             // If a file was uploaded, store it in the file system or cloud storage
             if ($request->hasFile('file')) {
-                Storage::disk('public')->put('files/' . $name, file_get_contents($request->file));
+                Storage::disk('public')->put('files/' . $imageName, file_get_contents($request->file));
             }
 
-            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/files/' . $name;
+            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/files/' . $imageName;
 
 
             $message = Message::create([
@@ -516,16 +520,14 @@ class CreateChatController extends Controller
                 'file' => 'file|max:16384',
             ]);
 
-            $voice = $request->file('file');
-
-            $name = $voice->getClientOriginalName();
+            $imageName = Str::random(32) . "." . $request->file->getClientOriginalExtension();
 
             // If a voice was uploaded, store it in the file system or cloud storage
             if ($request->hasFile('file')) {
-                Storage::disk('public')->put('voices/' . $name, file_get_contents($request->$voice));
+                Storage::disk('public')->put('voices/' . $imageName, file_get_contents($request->file));
             }
 
-            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/voices/' . $name;
+            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/voices/' . $imageName;
 
 
             $message = Message::create([
@@ -731,7 +733,7 @@ class CreateChatController extends Controller
 
             }
 
-            // Trigger a new-image-message event to Pusher
+            // Trigger a new-star-message event to Pusher
             $pusher = new Pusher(
                 '6b9ab9b8a817a7857923',
                 '2189a62314214f15c216',
@@ -903,16 +905,31 @@ class CreateChatController extends Controller
                 ]);
             }
 
+            DB::commit();
+
+            $newMessage = Message::with(['parent' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['polls' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['MessageUser' => function ($query) {
+                $query->select('id', 'full_name', 'image');
+            }])->with(['starmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->with(['pinmessages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->find($message->id);
+
+
             $pusher->trigger('livewire-chat', 'message-poll', [
-                'user_id' => $request->user_id,
-                'poll_options' => $request->poll_options,
-                'message' => $message,
+                'message' => $newMessage,
                 'conversations_id' => $request->conversations_id,
+                'user_id' => $request->user_id
             ]);
 
-            DB::commit();
             return response()->json([
                 'status' => 'success',
+                'conversations_id' => $request->conversations_id,
+                'user_id' => $request->user_id
             ], 200);
 
         } catch (\Exception $e) {
@@ -1001,5 +1018,147 @@ class CreateChatController extends Controller
         }
     }
 
+
+    public function muteConversation(Request $request): \Illuminate\Http\JsonResponse
+    {
+
+        DB::beginTransaction();
+        try {
+
+
+            $conversation_muted = MutedConversation::where('conversations_id',$request->conversation_id)
+                ->where('user_id', $request->user_id)->first();
+
+
+            if($conversation_muted != null){
+
+                $conversation_muted->delete();
+
+            }else{
+
+                MutedConversation::create([
+                    'user_id' => $request->user_id,
+                    'conversations_id' => $request->conversation_id,
+                    'mute' => true,
+                ]);
+
+            }
+
+            // Trigger a new-mute-conversation event to Pusher
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+
+            DB::commit();
+            $conversation = Conversation::with('mutesConversation')->find($request->conversation_id);
+
+
+            $pusher->trigger('livewire-chat', 'conversation-mute', [
+                'conversation' => $conversation->id,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'conversation' => $conversation,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function inviteParticipantConversation(Request $request){
+
+        DB::beginTransaction();
+        try {
+
+            foreach($request->participants as $key => $data)
+            {
+                $participant = Participant::create([
+                    'conversations_id' => $request->conversation_id,
+                    'user_id' => $data
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+            ], 200);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function emojiMessage(Request $request): \Illuminate\Http\JsonResponse
+    {
+
+        DB::beginTransaction();
+        try {
+
+            $message_emoji = EmojiMessage::where('message_id',$request->message_id)
+                ->where('user_id', $request->user_id)->where('emoji', $request->emoji)->first();
+
+
+            if($message_emoji != null){
+
+                $message_emoji->delete();
+
+            }else{
+
+                EmojiMessage::create([
+                    'user_id' => $request->user_id,
+                    'message_id' => $request->message_id,
+                    'emoji' => $request->emoji,
+                ]);
+
+            }
+
+            // Trigger a new-emoji-message event to Pusher
+            $pusher = new Pusher(
+                '6b9ab9b8a817a7857923',
+                '2189a62314214f15c216',
+                '1526965',
+                array('cluster' => 'mt1')
+            );
+
+
+            DB::commit();
+            $message = Message::with('emojimessages')->find($request->message_id);
+
+
+            $pusher->trigger('livewire-chat', 'message-emoji', [
+                'message' => $message->id,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+            ]);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
 }
