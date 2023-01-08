@@ -4,16 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Conversation extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+
+    protected $connection = 'mysql';
+
 
     protected $fillable=[
         'name',
         'image',
         'type',
-//        'mute',
         'last_time_message',
         'admin_id',
         'sender_id',

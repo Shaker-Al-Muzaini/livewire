@@ -19,6 +19,7 @@ class CreatePollsTable extends Migration
             $table->foreign('message_id')->references('id')->on('messages')->cascadeOnDelete();
             $table->text('poll_options')->nullable();
             $table->integer('rate')->default('0');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

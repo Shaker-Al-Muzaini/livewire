@@ -20,9 +20,8 @@ class CreateMessagesTable extends Migration
             $table->bigInteger('user_id')->unsigned();
             $table->foreign('user_id')->references('id')->on('users');
             $table->bigInteger('conversations_id')->unsigned();
-            $table->foreign('conversations_id')->references('id')->on('conversations');
+            $table->foreign('conversations_id')->references('id')->on('conversations')->cascadeOnDelete();
             $table->text('message')->nullable();;
-//            $table->string('emoji')->nullable();
             $table->boolean('read')->default(0);
             $table->boolean('is_image')->default(0);
             $table->boolean('is_file')->default(0);
@@ -33,16 +32,9 @@ class CreateMessagesTable extends Migration
                 ->references('id')
                 ->on('messages')
                 ->onDelete('cascade');
-            //
-
-//            $table->unsignedBigInteger('sender_id');
-//            $table->unsignedBigInteger('receiver_id');
-//            $table->foreign('sender_id')->references('id')->on('users');
-//            $table->foreign('receiver_id')->references('id')->on('users');
-//            $table->text('body')->nullable();
-//            $table->boolean('read')->default(0);
-//            $table->string('type')->nullable();
+            $table->softDeletes();
             $table->timestamps();
+
         });
     }
 

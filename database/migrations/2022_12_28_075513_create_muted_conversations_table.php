@@ -21,7 +21,7 @@ class CreateMutedConversationsTable extends Migration
             $table->bigInteger('user_id')->unsigned();
             $table->foreign('user_id')->references('id')->on('users');
             $table->boolean('mute')->default(false);
-
+            $table->softDeletes();
             $table->timestamps();
         });
     }

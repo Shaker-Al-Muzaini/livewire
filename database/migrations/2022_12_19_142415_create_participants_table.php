@@ -19,6 +19,7 @@ class CreateParticipantsTable extends Migration
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->bigInteger('conversations_id')->unsigned();
             $table->foreign('conversations_id')->references('id')->on('conversations')->cascadeOnDelete();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

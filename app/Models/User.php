@@ -21,19 +21,30 @@ class User extends Authenticatable
 
 
         protected $connection = 'mysql_2';
+        protected $table = 'users';
 
 
 
     protected $fillable = [
-        'name',
+        'full_name',
         'email',
         'password',
+        'job',
+        'phone_NO',
+        'phone_NO2',
+        'phone_NO3',
+        'image',
+        'company_NO',
+        'company_name',
+        'role_id',
+        'status',
+        'private_status'
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $hidden = [
         'password',
@@ -43,21 +54,29 @@ class User extends Authenticatable
     /**
      * The attributes that should be cast.
      *
-     * @var array<string, string>
+     * @var array
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'avatar_url',
+    ];
 
     public function UserSConversation(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(User::class,'sender_id','id');
+        return $this->hasMany(Conversation::class,'sender_id','id');
+    }
+
+    public function macAddresses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MacAddress::class,'user_id','id');
     }
 
     public function UserRConversation(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(User::class,'receiver_id','id');
+        return $this->hasMany(Conversation::class,'receiver_id','id');
     }
 
     public function messages(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -85,6 +104,11 @@ class User extends Authenticatable
         return $this->hasMany(MutedConversation::class,'user_id','id');
     }
 
+    public function deletes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DeletedMessage::class,'user_id','id');
+    }
+
     public function pollsVotes(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PollVote::class,'user_id','id');
@@ -93,6 +117,11 @@ class User extends Authenticatable
     public function participants(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Participant::class,'user_id','id');
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        return 'https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=' . $this->name;
     }
 
 }

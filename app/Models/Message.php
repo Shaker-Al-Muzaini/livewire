@@ -4,11 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Message extends Model
 {
 
     use HasFactory;
+    use SoftDeletes;
+
+    protected $connection = 'mysql';
+
 
     protected $fillable=[
         'user_id',
@@ -61,6 +66,11 @@ class Message extends Model
     public function emojimessages(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(EmojiMessage::class);
+    }
+
+    public function deletemessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DeletedMessage::class);
     }
 
 }
