@@ -101,6 +101,10 @@ Route::group([
 
         //emoji
         Route::post('emoji_message',[MessageController::class, 'emojiMessage']);
+
+        //forwards
+        Route::post('forward_message',[MessageController::class, 'forwardMessage']);
+
     });
 
 });
