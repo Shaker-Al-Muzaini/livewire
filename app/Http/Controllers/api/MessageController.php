@@ -2,11 +2,29 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Events\Conversation\AllConversations;
+use App\Events\Message\DeleteMessageForEveryone;
+use App\Events\Message\DeleteMessageForMe;
+use App\Events\Message\MessageForward;
+use App\Events\Message\MessageRead;
+use App\Events\Message\PinMessage;
+use App\Events\Message\SendMessage;
+use App\Events\Message\SendMessageEmoji;
+use App\Events\Message\SendMessageFile;
+use App\Events\Message\SendMessageImage;
+use App\Events\Message\SendMessagePoll;
+use App\Events\Message\SendMessageVoice;
+use App\Events\Message\SendPollVote;
+use App\Events\Message\StarMessage;
+use App\Events\UserStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MessageResource;
+use App\Http\Resources\ParticipantResource;
 use App\Models\Conversation;
 use App\Models\DeletedMessage;
 use App\Models\EmojiMessage;
 use App\Models\Message;
+use App\Models\Participant;
 use App\Models\PinnedMessage;
 use App\Models\Poll;
 use App\Models\PollVote;
@@ -26,13 +44,6 @@ class MessageController extends Controller
         DB::beginTransaction();
         try {
 
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
             $message = Message::create([
                 'user_id' => $request->user_id,
                 'message' => $request->message,
@@ -45,41 +56,16 @@ class MessageController extends Controller
             ]);
             DB::commit();
 
-            $newMessage = Message::with(['parent' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['polls' => function($query) {
-                $query->orderBy('created_at', 'desc')->with([
-                    'pollVotes' => function($query){
-                        $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['PollVoteUser' => function ($query) {
-                            $query->select('id', 'full_name', 'image');
-                        }]);
-                    }
-                ]);
-            }])->with(['MessageUser' => function ($query) {
-                $query->select('id', 'full_name', 'image');
-            }])->with(['starmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['pinmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['emojimessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['deletemessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->find($message->id);
+            $newMessage = Message::find($message->id);
+            $user_id = $request->user_id;
+            $message_id = $message->id;
+            $conversations_id = $request->conversations_id;
 
-            $pusher->trigger('livewire-chat', 'message-sent', [
-                'user_id' => $request->user_id,
-                'message_id' => $message->id,
-                'message' => $newMessage,
-                'conversations_id' => $request->conversations_id,
-            ]);
+            event(new SendMessage($newMessage, $user_id, $message_id, $conversations_id));
 
             return response()->json([
                 'status' => 'success',
-                'message' => $newMessage,
-
+                'message' => new MessageResource($newMessage),
             ]);
 
 
@@ -182,25 +168,15 @@ class MessageController extends Controller
         DB::beginTransaction();
         try {
 
-//            $conversation = Conversation::with('messages')->where('id', $request->conversation_id)->get();
             $conversation = Conversation::find($request->conversation_id);
+
             $messages = $conversation->messages()->where('user_id','!=', $request->user_id)->update([
                 'read' => true
             ]);
 
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
-            $pusher->trigger('livewire-chat', 'message-read',[
-                'messages' => $messages,
-                'conversation_id' => $request->conversation_id,
-                'user_id' => $request->user_id,
-            ]);
-
+            $user_id = $request->user_id;
+            $conversation_id = $request->conversation_id;
+            event(new MessageRead($messages, $user_id, $conversation_id));
 
             DB::commit();
             return response()->json([
@@ -237,7 +213,7 @@ class MessageController extends Controller
                 Storage::disk('public')->put('images/' . $imageName, file_get_contents($request->image));
             }
 
-            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/images/' . $imageName;
+            $path = 'https://vela-test-chat.pal-lady.com/storage/app/public/images/' . $imageName;
 
 
             $message = Message::create([
@@ -252,44 +228,13 @@ class MessageController extends Controller
                 'last_time_message' => $message->created_at
             ]);
 
-            // Trigger a new-image-message event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
             DB::commit();
-            $newMessage = Message::with(['parent' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['polls' => function($query) {
-                $query->orderBy('created_at', 'desc')->with([
-                    'pollVotes' => function($query){
-                        $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['PollVoteUser' => function ($query) {
-                            $query->select('id', 'full_name', 'image');
-                        }]);
-                    }
-                ]);
-            }])->with(['MessageUser' => function ($query) {
-                $query->select('id', 'full_name', 'image');
-            }])->with(['starmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['pinmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['emojimessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['deletemessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->find($message->id);
 
-            $pusher->trigger('livewire-chat', 'new-image-message', [
-                'message' => $newMessage,
-                'conversations_id' => $request->conversations_id,
-                'user_id' => $request->user_id
-            ]);
+            $newMessage = Message::find($message->id);
+            $user_id = $request->user_id;
+            $conversations_id = $request->conversations_id;
+
+            event(new SendMessageImage($newMessage, $user_id, $conversations_id));
 
             return response()->json(['status' => 'success']);
 
@@ -322,7 +267,7 @@ class MessageController extends Controller
                 Storage::disk('public')->put('files/' . $imageName, file_get_contents($request->file));
             }
 
-            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/files/' . $imageName;
+            $path = 'https://vela-test-chat.pal-lady.com/storage/app/public/files/' . $imageName;
 
 
             $message = Message::create([
@@ -337,45 +282,13 @@ class MessageController extends Controller
                 'last_time_message' => $message->created_at
             ]);
 
-            // Trigger a new-file-message event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
             DB::commit();
 
+            $newMessage = Message::find($message->id);
+            $user_id = $request->user_id;
+            $conversations_id = $request->conversations_id;
 
-            $newMessage = Message::with(['parent' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['polls' => function($query) {
-                $query->orderBy('created_at', 'desc')->with([
-                    'pollVotes' => function($query){
-                        $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['PollVoteUser' => function ($query) {
-                            $query->select('id', 'full_name', 'image');
-                        }]);
-                    }
-                ]);
-            }])->with(['MessageUser' => function ($query) {
-                $query->select('id', 'full_name', 'image');
-            }])->with(['starmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['pinmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['emojimessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['deletemessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->find($message->id);
-
-            $pusher->trigger('livewire-chat', 'new-file-message', [
-                'message' => $newMessage,
-                'conversations_id' => $request->conversations_id,
-                'user_id' => $request->user_id
-            ]);
+            event(new SendMessageFile($newMessage, $user_id, $conversations_id));
 
             return response()->json(['status' => 'success']);
 
@@ -408,7 +321,7 @@ class MessageController extends Controller
                 Storage::disk('public')->put('voices/' . $imageName, file_get_contents($request->file));
             }
 
-            $path = 'http://vela-test-chat.pal-lady.com/storage/app/public/voices/' . $imageName;
+            $path = 'https://vela-test-chat.pal-lady.com/storage/app/public/voices/' . $imageName;
 
 
             $message = Message::create([
@@ -423,44 +336,13 @@ class MessageController extends Controller
                 'last_time_message' => $message->created_at
             ]);
 
-            // Trigger a new-voice-message event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
             DB::commit();
 
-            $newMessage = Message::with(['parent' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['polls' => function($query) {
-                $query->orderBy('created_at', 'desc')->with([
-                    'pollVotes' => function($query){
-                        $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['PollVoteUser' => function ($query) {
-                            $query->select('id', 'full_name', 'image');
-                        }]);
-                    }
-                ]);
-            }])->with(['MessageUser' => function ($query) {
-                $query->select('id', 'full_name', 'image');
-            }])->with(['starmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['pinmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['emojimessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['deletemessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->find($message->id);
+            $newMessage = Message::find($message->id);
+            $user_id = $request->user_id;
+            $conversations_id = $request->conversations_id;
 
-            $pusher->trigger('livewire-chat', 'new-voice-message', [
-                'message' => $newMessage,
-                'conversations_id' => $request->conversations_id,
-                'user_id' => $request->user_id
-            ]);
+            event(new SendMessageVoice($newMessage, $user_id, $conversations_id));
 
             return response()->json(['status' => 'success']);
 
@@ -491,18 +373,9 @@ class MessageController extends Controller
             $user->status = $request->status;
             $user->save();
 
-            // Trigger a user-status-changed event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
-            $pusher->trigger('livewire-chat', 'user-status-changed', [
-                'user_id' => $user->id,
-                'status' => $user->status,
-            ]);
+            $user_id = $user->id;
+            $status =  $user->status;
+            event(new UserStatus($user_id, $status));
 
             DB::commit();
             return response()->json([
@@ -584,19 +457,7 @@ class MessageController extends Controller
             ])->select('id', 'message_id', 'user_id', 'pin')->
             where('message_id',$request->message_id)->latest()->get();
 
-
-            // Trigger a message-pinned event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
-            $pusher->trigger('livewire-chat', 'message-pinned', [
-                'message' => $message->id,
-                'message_pin' => $message_pin[0] ?? []
-            ]);
+            event(new PinMessage($message));
 
             return response()->json([
                 'status' => 'success',
@@ -640,15 +501,6 @@ class MessageController extends Controller
 
             }
 
-            // Trigger a new-star-message event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
-
             DB::commit();
             $message = Message::with('starmessages')->find($request->message_id);
 
@@ -664,10 +516,7 @@ class MessageController extends Controller
             ])->select('id', 'message_id', 'user_id', 'star')->
             where('message_id',$request->message_id)->latest()->get();
 
-            $pusher->trigger('livewire-chat', 'message-starred', [
-                'message' => $message->id,
-                'message_star' => $message_star[0] ?? []
-            ]);
+            event(new StarMessage($message));
 
             return response()->json([
                 'status' => 'success',
@@ -824,13 +673,6 @@ class MessageController extends Controller
 
             $object = json_decode($request->poll_options);
 
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
             $message = Message::create([
                 'user_id' => $request->user_id,
                 'message' => $request->message,
@@ -852,36 +694,11 @@ class MessageController extends Controller
 
             DB::commit();
 
-            $newMessage = Message::with(['parent' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['polls' => function($query) {
-                $query->orderBy('created_at', 'desc')->with([
-                    'pollVotes' => function($query){
-                        $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                            $query->orderBy('created_at', 'desc');
-                        }])->with(['PollVoteUser' => function ($query) {
-                            $query->select('id', 'full_name', 'image');
-                        }]);
-                    }
-                ]);
-            }])->with(['MessageUser' => function ($query) {
-                $query->select('id', 'full_name', 'image');
-            }])->with(['starmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['pinmessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['emojimessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->with(['deletemessages' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])->find($message->id);
+            $newMessage = Message::find($message->id);
+            $user_id = $request->user_id;
+            $conversations_id = $request->conversations_id;
 
-
-            $pusher->trigger('livewire-chat', 'message-poll', [
-                'message' => $newMessage,
-                'conversations_id' => $request->conversations_id,
-                'user_id' => $request->user_id
-            ]);
+            event(new SendMessagePoll($newMessage, $user_id, $conversations_id));
 
             return response()->json([
                 'status' => 'success',
@@ -906,14 +723,6 @@ class MessageController extends Controller
         DB::beginTransaction();
         try {
 
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
-
             $polls = PollVote::where('user_id', $request->user_id)->where('poll_id', $request->poll_id)->first();
             if($polls == null){
 
@@ -928,36 +737,13 @@ class MessageController extends Controller
 
                 DB::commit();
 
-                $newMessage = Message::with(['parent' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['polls' => function($query) {
-                    $query->orderBy('created_at', 'desc')->with([
-                        'pollVotes' => function($query){
-                            $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                                $query->orderBy('created_at', 'desc');
-                            }])->with(['PollVoteUser' => function ($query) {
-                                $query->select('id', 'full_name', 'image');
-                            }]);
-                        }
-                    ]);
-                }])->with(['MessageUser' => function ($query) {
-                    $query->select('id', 'full_name', 'image');
-                }])->with(['starmessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['pinmessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['emojimessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['deletemessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->find($poll->message_id);
+                $newMessage = Message::find($poll->message_id);
 
-                $pusher->trigger('livewire-chat', 'poll-vote', [
-                    'poll_vote' => $newMessage,
-                ]);
+                event(new SendPollVote($newMessage));
 
                 return response()->json([
                     'status' => 'success',
+                    'newMessage' => new MessageResource($newMessage),
                 ], 200);
 
             }else{
@@ -970,34 +756,13 @@ class MessageController extends Controller
 
                 DB::commit();
 
-                $newMessage = Message::with(['parent' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['polls' => function($query) {
-                    $query->orderBy('created_at', 'desc')->with([
-                        'pollVotes' => function($query){
-                            $query->orderBy('created_at', 'desc')->with(['PollVotePoll' => function($query) {
-                                $query->orderBy('created_at', 'desc');
-                            }])->with(['PollVoteUser' => function ($query) {
-                                $query->select('id', 'full_name', 'image');
-                            }]);
-                        }
-                    ]);
-                }])->with(['MessageUser' => function ($query) {
-                    $query->select('id', 'full_name', 'image');
-                }])->with(['starmessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['pinmessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->with(['emojimessages' => function($query) {
-                    $query->orderBy('created_at', 'desc');
-                }])->find($poll->message_id);
+                $newMessage = Message::find($poll->message_id);
 
-                $pusher->trigger('livewire-chat', 'poll-vote', [
-                    'poll_vote' => $newMessage,
-                ]);
+                event(new SendPollVote($newMessage));
 
                 return response()->json([
                     'status' => 'success',
+                    'poll_vote' => new MessageResource($newMessage),
                 ], 200);
 
 
@@ -1041,26 +806,15 @@ class MessageController extends Controller
 
             }
 
-            // Trigger a new-emoji-message event to Pusher
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
-
             DB::commit();
-            $message = Message::with('emojimessages')->find($request->message_id);
 
+            $newMessage = Message::find($request->message_id);
 
-            $pusher->trigger('livewire-chat', 'message-emoji', [
-                'message' => $message,
-            ]);
+            event(new SendMessageEmoji($newMessage));
 
             return response()->json([
                 'status' => 'success',
-                'message' => $message,
+                'message' => new MessageResource($newMessage),
             ]);
 
         } catch (\Exception $e) {
@@ -1078,23 +832,18 @@ class MessageController extends Controller
         DB::beginTransaction();
         try {
 
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
-
             $message = Message::find($request->message_id)->delete();
 
             DB::commit();
 
-            $pusher->trigger('livewire-chat', 'delete-for-everyone-message', [
-                'status' => 'success',
-            ]);
+            $newMessage = Message::withTrashed()->find($request->message_id);
+
+            event(new DeleteMessageForEveryone($newMessage));
+
 
             return response()->json([
                 'status' => 'success',
+                'message' => new MessageResource($newMessage)
             ], 200);
 
         } catch (\Exception $e) {
@@ -1119,38 +868,18 @@ class MessageController extends Controller
                 'delete' => true,
             ]);
 
-            $pusher = new Pusher(
-                '6b9ab9b8a817a7857923',
-                '2189a62314214f15c216',
-                '1526965',
-                array('cluster' => 'mt1')
-            );
 
             DB::commit();
             $message = Message::with('deletemessages')->find($request->message_id);
 
-            $message_delete = DeletedMessage::with([
-                'MessageDeletedMessage' => function ($query){
-                    $query->with([
-                        'MessageUser' => function ($query) {
-                            $query->select('id', 'full_name', 'image');
-                        },
+            $newMessage = Message::find($request->message_id);
 
-                    ]);
-                },
-            ])->select('id', 'message_id', 'user_id', 'delete')->
-            where('message_id',$request->message_id)
-                ->where('user_id', $request->user_id)->latest()->get();
-
-            $pusher->trigger('livewire-chat', 'delete-for-me-message', [
-                'message' => $message->id,
-                'message_delete' => $message_delete[0] ?? []
-            ]);
+            event(new DeleteMessageForMe($newMessage));
 
             return response()->json([
                 'status' => 'success',
                 'message' => $message,
-                'message_delete' => $message_delete[0] ?? []
+                'message_delete' => new MessageResource($newMessage)
             ], 200);
 
         } catch (\Exception $e) {
@@ -1160,6 +889,148 @@ class MessageController extends Controller
                 'message' => "Something went really wrong!",
                 'error' => $e->getMessage()
 
+            ], 500);
+        }
+    }
+
+    public function forwardMessage(Request $request): \Illuminate\Http\JsonResponse
+    {
+        DB::beginTransaction();
+        try {
+
+            foreach ($request->user_id as $key => $user){
+
+                $checkedConversation = Conversation::where('receiver_id', $request->sender_id)
+                    ->where('sender_id', $user)
+                    ->orWhere('receiver_id', $user)
+                    ->where('sender_id', $request->sender_id)->first();
+
+                if(!$checkedConversation){
+
+                    $sender = User::find($request->sender_id);
+
+                    $createdConversation= Conversation::create([
+                        'type' => 'peer',
+                        'sender_id' => $request->sender_id,
+                        'receiver_id' => $user,
+                        'company_NO' => $sender->company_NO
+                    ]);
+
+                    DB::commit();
+
+                    $participant = Participant::create([
+                        'conversations_id' => $createdConversation->id,
+                        'user_id' => $request->sender_id
+                    ]);
+
+                    $participant2 = Participant::create([
+                        'conversations_id' => $createdConversation->id,
+                        'user_id' => $user
+                    ]);
+
+                    foreach ($request->message_id as $message){
+
+                        $oldMessage = Message::find($message);
+
+                        if($oldMessage->is_image){
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $createdConversation->id,
+                                'is_forward' => true,
+                                'is_image' => true
+                            ]);
+                        }elseif ($oldMessage->is_file){
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $createdConversation->id,
+                                'is_forward' => true,
+                                'is_file' => true
+                            ]);
+                        }elseif ($oldMessage->is_voice){
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $createdConversation->id,
+                                'is_forward' => true,
+                                'is_voice' => true
+                            ]);
+                        }else{
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $createdConversation->id,
+                                'is_forward' => true
+                            ]);
+                        }
+                    }
+
+                }else{
+
+                    foreach ($request->message_id as $message){
+
+                        $oldMessage = Message::find($message);
+
+                        if($oldMessage->is_image){
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $checkedConversation->id,
+                                'is_forward' => true,
+                                'is_image' => true
+                            ]);
+                        }elseif ($oldMessage->is_file){
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $checkedConversation->id,
+                                'is_forward' => true,
+                                'is_file' => true
+                            ]);
+                        }elseif ($oldMessage->is_voice){
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $checkedConversation->id,
+                                'is_forward' => true,
+                                'is_voice' => true
+                            ]);
+                        }else{
+                            $newMessage = Message::create([
+                                'user_id' => $request->sender_id,
+                                'message' => $oldMessage->message,
+                                'conversations_id' => $checkedConversation->id,
+                                'is_forward' => true
+                            ]);
+                        }
+
+                    }
+
+                }
+
+            }
+
+            DB::commit();
+
+            $messages = Message::where('is_forward', true)->where('created_at', date('Y-m-d H:i:s'))->get();
+            $conversations = Participant::where('user_id', $request->sender_id)->get();
+
+            event(new MessageForward($messages));
+//            event(new AllConversations($conversations));
+
+            return response()->json([
+                'status' => 'success',
+                'messages' => MessageResource::collection($messages),
+                'conversations' => ParticipantResource::collection($conversations),
+            ], 200);
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            DB::rollBack();
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
             ], 500);
         }
     }

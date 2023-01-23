@@ -25,6 +25,7 @@ class Message extends Model
         'is_file',
         'is_voice',
         'is_poll',
+        'is_forward',
         'parent_id'
     ];
 
@@ -48,10 +49,10 @@ class Message extends Model
         return $this->hasMany(Message::class, 'parent_id');
     }
 
-    public function polls(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(Poll::class);
-    }
+        public function polls(): \Illuminate\Database\Eloquent\Relations\HasMany
+        {
+            return $this->hasMany(Poll::class);
+        }
 
     public function starmessages(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
