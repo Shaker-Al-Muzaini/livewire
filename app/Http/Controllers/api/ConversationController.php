@@ -543,4 +543,78 @@ class ConversationController extends Controller
         }
     }
 
+    public function infoGroupConversation(Request $request): JsonResponse
+    {
+
+        try {
+
+            $users = Conversation::with(['usersConversation' => function($query){
+                $query->with(['UserParticipant' => function($query){
+                    $query->select('id', 'full_name', 'email', 'job', 'phone_NO','image');
+                }]);
+            }])->select('id','type')->find($request->conversation_id);
+
+            $messages = Conversation::with(['messages' => function($query){
+                $query->select('id', 'message','conversations_id','is_image','is_file')->where('is_image' , true)->orWhere('is_file', true);
+            }])->select('id','type')->find($request->conversation_id);
+
+
+            return response()->json([
+                'status' => 'success',
+                'users' => $users,
+                'messages' => $messages,
+//                'conversations' => $conversations
+            ], 200);
+
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+    public function infoPeerConversation(Request $request): JsonResponse
+    {
+
+        try {
+
+            $users = Conversation::with(['usersConversation' => function($query){
+                $query->with(['UserParticipant' => function($query){
+                    $query->select('id', 'full_name', 'email', 'job', 'phone_NO','image');
+                }]);
+            }])->select('id','type')->find($request->conversation_id);
+
+            $messages = Conversation::with(['messages' => function($query){
+                $query->select('id', 'message','conversations_id','is_image','is_file')->where('is_image' , true)->orWhere('is_file', true);
+            }])->select('id','type')->find($request->conversation_id);
+
+//            $conversations = Participant::with(['ConversationParticipant' => function($query) use ($request){
+//                $query->select('id')->with(['usersConversation' => function($query) use ($request){
+//                    $query->where('user_id',$request->user_id);
+//                }]);
+//            }])->select('id', 'conversations_id')->where('user_id', $request->receiver_id)->get();
+
+            return response()->json([
+                'status' => 'success',
+                'users' => $users,
+                'messages' => $messages,
+//                'conversations' => $conversations
+            ], 200);
+
+
+        } catch (\Exception $e) {
+            // Return Json Response
+            return response()->json([
+                'message' => "Something went really wrong!",
+                'error' => $e->getMessage()
+
+            ], 500);
+        }
+    }
+
+
 }

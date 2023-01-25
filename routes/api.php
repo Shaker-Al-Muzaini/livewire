@@ -56,6 +56,12 @@ Route::group([
         //get the pin message of the conversation
         Route::post('pin_conversation',[ConversationController::class, 'pinConversation']);
 
+        //get info of the conversation
+        Route::post('info_group_conversation',[ConversationController::class, 'infoGroupConversation']);
+        Route::post('info_peer_conversation',[ConversationController::class, 'infoPeerConversation']);
+
+
+
         //send message encryption
         Route::post('send_message_encryption', [MessageController::class, 'sendMessageEncryption']);
 
